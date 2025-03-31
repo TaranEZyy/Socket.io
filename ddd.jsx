@@ -1,3 +1,53 @@
+const io = require("socket.io")(3000, {
+  cors: {
+    origin: "*",
+  },
+});
+
+let users = {};
+
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
+
+  socket.on("registerUser", (username) => {
+    users[socket.id] = { id: socket.id, username };
+    io.emit("usersList", Object.values(users)); // Broadcast updated user list
+  });
+
+  socket.on("sendMessage", ({ receiverId, text }) => {
+    if (users[receiverId]) {
+      io.to(receiverId).emit("receiveMessage", { senderId: socket.id, text });
+      io.to(receiverId).emit("unreadMessage", { senderId: socket.id });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    delete users[socket.id];
+    io.emit("usersList", Object.values(users));
+  });
+});
+
+console.log("Socket.io server running on port 3000");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet } from "react-native";
@@ -40,7 +90,7 @@ const JoinScreen = ({ navigation }) => {
 
 
 
-  
+
 
 // 🟢 Home Screen: List of Online Users
 const HomeScreen = ({ navigation, route }) => {
@@ -132,7 +182,7 @@ const ChatScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Chat with here {user.username}</Text>
+      <Text style={styles.header}>Chat with {user.username}</Text>
       <FlatList
         data={messages}
         keyExtractor={(item, index) => index.toString()}
@@ -151,6 +201,8 @@ const ChatScreen = ({ route }) => {
     </View>
   );
 };
+
+
 
 
 
